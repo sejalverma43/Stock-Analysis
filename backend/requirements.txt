@@ -1,0 +1,10 @@
+Flask
+flask-cors
+Flask-Limiter
+Flask-Caching
+numpy
+pandas
+scikit-learn
+requests
+python-dotenv
+

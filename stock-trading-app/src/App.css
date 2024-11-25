@@ -1,0 +1,256 @@
+/* src/App.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+/* Body Styling */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(120deg, #1e3c72, #2a5298);
+  color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+}
+
+/* Main App Container */
+.App {
+  text-align: center;
+  padding: 20px;
+  color: #fff;
+}
+
+/* Header */
+header {
+  background: linear-gradient(90deg, #2a5298, #1e3c72);
+  color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  font-size: 28px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Search Section */
+.stock-search {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.stock-search input {
+  padding: 12px 16px;
+  width: 320px;
+  border: none;
+  border-radius: 25px 0 0 25px;
+  outline: none;
+  font-size: 16px;
+  border: 2px solid #00cec9;
+  background: rgba(255, 255, 255, 0.8);
+  color: #2c3e50;
+  transition: box-shadow 0.3s ease;
+}
+
+.stock-search input:focus {
+  box-shadow: 0 0 10px #00cec9;
+}
+
+.stock-search button {
+  padding: 12px 20px;
+  border: none;
+  background: #00cec9;
+  color: #fff;
+  font-size: 16px;
+  border-radius: 0 25px 25px 0;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.stock-search button:hover {
+  background: #00b894;
+  transform: translateY(-2px);
+}
+
+/* Card Container */
+.stock-info,
+.portfolio,
+.news-feed,
+.chart-container,
+.model-controls {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  margin: 20px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.4);
+  width: 85%;
+  max-width: 600px;
+  color: #fff;
+}
+
+.stock-info h2,
+.portfolio h2,
+.news-feed h3,
+.model-controls h3 {
+  font-size: 24px;
+  color: #00cec9;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.stock-info p,
+.portfolio p,
+.news-feed p,
+.model-controls p {
+  font-size: 18px;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.stock-info p strong {
+  color: #55efc4;
+}
+
+/* Buttons for Buy and Sell */
+.actions {
+  margin: 20px 0;
+}
+
+.actions button {
+  padding: 12px 25px;
+  margin: 10px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #fff;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.actions button:first-of-type {
+  background: #6c5ce7;
+}
+
+.actions button:first-of-type:hover {
+  background: #5e50ee;
+  transform: translateY(-3px);
+}
+
+.actions button:last-of-type {
+  background: #d63031;
+}
+
+.actions button:last-of-type:hover {
+  background: #c0392b;
+  transform: translateY(-3px);
+}
+
+.actions button:disabled {
+  background: #b2bec3;
+  cursor: not-allowed;
+}
+
+/* Portfolio List */
+.portfolio ul {
+  list-style: none;
+  padding: 0;
+}
+
+.portfolio li {
+  font-size: 16px;
+  margin: 10px 0;
+  text-align: left;
+}
+
+/* News Feed */
+.news-feed h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #00cec9;
+}
+
+.news-feed ul {
+  list-style: none;
+  padding: 0;
+}
+
+.news-feed li {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.news-feed a {
+  color: #55efc4;
+  font-weight: bold;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.news-feed a:hover {
+  text-decoration: underline;
+}
+
+.news-feed p {
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+.news-feed small {
+  color: #b2bec3;
+}
+
+/* Chart Container */
+.chart-container {
+  background: rgba(255, 255, 255, 0.1);
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 12px;
+  width: 85%;
+  max-width: 800px;
+  color: #fff;
+}
+
+/* Model Controls */
+.model-controls {
+  background: rgba(255, 255, 255, 0.1);
+  margin: 20px auto;
+  padding: 15px;
+  border-radius: 12px;
+  width: 85%;
+  max-width: 600px;
+  color: #fff;
+  text-align: left;
+}
+
+.model-controls label {
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+.model-controls select {
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stock-search input {
+    width: 200px;
+  }
+
+  .stock-info,
+  .portfolio,
+  .news-feed,
+  .chart-container,
+  .model-controls {
+    width: 90%;
+  }
+}
