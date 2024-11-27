@@ -1,23 +1,30 @@
 // src/components/ModelControls.js
 
 import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem, Card, CardContent, Typography } from '@mui/material';
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Card,
+  CardContent,
+  Typography,
+  Divider,
+} from '@mui/material';
+import { cardStyle } from '../styles';
 
 const ModelControls = ({ algorithm, setAlgorithm }) => {
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        mt: 2,
-        transition: '0.3s',
-        '&:hover': {
-          boxShadow: 6,
-        },
-      }}
-    >
+    <Card variant="outlined" sx={{ ...cardStyle, maxWidth: 500, mx: 'auto' }}>
       <CardContent>
-        <Typography variant="h6">Machine Learning Model</Typography>
-        <FormControl fullWidth variant="outlined" sx={{ mt: 2 }}>
+        <Typography
+          variant="h5"
+          sx={{ textAlign: 'center', fontWeight: 'bold', mb: 2 }}
+        >
+          Machine Learning Model Selector
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+        <FormControl fullWidth variant="outlined">
           <InputLabel>Algorithm</InputLabel>
           <Select
             value={algorithm}

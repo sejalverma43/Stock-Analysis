@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import axios from 'axios';
-import { Card, CardContent, Typography } from '@mui/material';
+import { Card, CardContent, Typography, Divider, CircularProgress } from '@mui/material';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,77 +29,64 @@ ChartJS.register(
 const HistoricalChart = ({ stockSymbol }) => {
   const [chartData, setChartData] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchHistoricalData = async () => {
-        if (!stockSymbol) {
-          setError('No stock symbol provided.');
+      if (!stockSymbol) {
+        setError('No stock symbol provided.');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY;
+        const response = await axios.get(`https://www.alphavantage.co/query`, {
+          params: {
+            function: 'TIME_SERIES_INTRADAY',
+            symbol: stockSymbol,
+            interval: '5min',
+            apikey: API_KEY,
+          },
+        });
+
+        const timeSeries = response.data['Time Series (5min)'];
+        if (!timeSeries || Object.keys(timeSeries).length === 0) {
+          setChartData(null);
+          if (response.data.Note) {
+            setError('API rate limit exceeded. Please wait and try again later.');
+          } else if (response.data['Error Message']) {
+            setError('Invalid stock symbol. Please try again.');
+          } else {
+            setError('Failed to fetch historical data.');
+          }
           return;
         }
-      
-        try {
-          console.log('Fetching data for stock symbol:', stockSymbol);
-      
-          const API_KEY = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY;
-          const response = await axios.get(
-            `https://www.alphavantage.co/query`,
+
+        const dates = Object.keys(timeSeries).reverse();
+        const prices = dates.map((date) => parseFloat(timeSeries[date]['4. close']));
+
+        setChartData({
+          labels: dates,
+          datasets: [
             {
-              params: {
-                function: 'TIME_SERIES_INTRADAY',
-                symbol: stockSymbol,
-                interval: '5min', // Required for intraday data
-                apikey: API_KEY,
-              },
-            }
-          );
-      
-          console.log('Alpha Vantage API response:', response.data);
-      
-          const timeSeries = response.data['Time Series (5min)'];
-      
-          if (!timeSeries || Object.keys(timeSeries).length === 0) {
-            setChartData(null);
-            if (response.data.Note) {
-              console.error('API Rate Limit Exceeded:', response.data.Note);
-              setError('API rate limit exceeded. Please wait and try again later.');
-            } else if (response.data.Information) {
-              console.error('Premium Endpoint Accessed:', response.data.Information);
-              setError(
-                'This endpoint requires a premium subscription. Please upgrade or use a free endpoint.'
-              );
-            } else if (response.data['Error Message']) {
-              console.error('Invalid Stock Symbol:', response.data['Error Message']);
-              setError('Invalid stock symbol. Please try again.');
-            } else {
-              console.error('Empty or invalid API response:', response);
-              setError('Failed to fetch historical data.');
-            }
-            return;
-          }
-      
-          const dates = Object.keys(timeSeries).reverse();
-          const prices = dates.map((date) => parseFloat(timeSeries[date]['4. close']));
-      
-          setChartData({
-            labels: dates,
-            datasets: [
-              {
-                label: `${stockSymbol} Closing Prices`,
-                data: prices,
-                borderColor: 'rgba(75,192,192,1)',
-                fill: false,
-              },
-            ],
-          });
-      
-          setError(null); // Clear any previous errors
-        } catch (error) {
-          console.error('Error fetching historical data:', error.response || error);
-          setChartData(null);
-          setError('Failed to fetch historical data.');
-        }
-      };
-      
+              label: `${stockSymbol} Closing Prices`,
+              data: prices,
+              borderColor: 'rgba(75,192,192,1)',
+              backgroundColor: 'rgba(75,192,192,0.2)',
+              fill: true,
+              tension: 0.4,
+            },
+          ],
+        });
+
+        setError(null);
+      } catch (error) {
+        setError('Failed to fetch historical data.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
     fetchHistoricalData();
   }, [stockSymbol]);
@@ -109,19 +96,43 @@ const HistoricalChart = ({ stockSymbol }) => {
       variant="outlined"
       sx={{
         mt: 2,
+        p: 2,
+        border: '2px solid black',
+        borderRadius: 2,
+        maxWidth: 800,
+        mx: 'auto',
         transition: '0.3s',
         '&:hover': {
-          boxShadow: 6,
+          boxShadow: 8,
         },
       }}
     >
       <CardContent>
-        {error && (
-          <Typography variant="body1" color="error">
+        <Typography
+          variant="h5"
+          sx={{
+            textAlign: 'center',
+            fontWeight: 'bold',
+            mb: 2,
+            color: 'primary.main',
+          }}
+        >
+          Historical Stock Chart
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
+        {loading ? (
+          <CircularProgress
+            sx={{
+              display: 'block',
+              mx: 'auto',
+              my: 4,
+            }}
+          />
+        ) : error ? (
+          <Typography variant="body1" color="error" sx={{ textAlign: 'center' }}>
             {error}
           </Typography>
-        )}
-        {chartData ? (
+        ) : chartData ? (
           <Line
             data={chartData}
             options={{
@@ -149,14 +160,12 @@ const HistoricalChart = ({ stockSymbol }) => {
                   time: {
                     unit: 'day',
                   },
-                  display: true,
                   title: {
                     display: true,
                     text: 'Date',
                   },
                 },
                 y: {
-                  display: true,
                   title: {
                     display: true,
                     text: 'Price ($)',
@@ -166,9 +175,9 @@ const HistoricalChart = ({ stockSymbol }) => {
             }}
           />
         ) : (
-          !error && (
-            <Typography variant="body1">Loading historical chart...</Typography>
-          )
+          <Typography variant="body1" sx={{ textAlign: 'center' }}>
+            No historical data available.
+          </Typography>
         )}
       </CardContent>
     </Card>

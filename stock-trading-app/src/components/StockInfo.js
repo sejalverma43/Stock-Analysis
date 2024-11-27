@@ -1,53 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, Typography } from '@mui/material';
-import { TrendingUp, TrendingDown } from '@mui/icons-material';
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, Typography } from "@mui/material";
+import { TrendingUp, TrendingDown } from "@mui/icons-material";
 
 const StockInfo = ({ stock, sentiment, signal, prediction }) => {
-  const [realTimePrice, setRealTimePrice] = useState(stock?.price || null);
+  const [latestPrice, setLatestPrice] = useState(null);
 
   useEffect(() => {
+    let intervalId;
+
+    const fetchLatestPrice = async () => {
+      try {
+        const response = await fetch(
+          `https://finnhub.io/api/v1/quote?symbol=${stock.symbol}&token=${process.env.REACT_APP_FINNHUB_API_KEY}`
+        );
+        const data = await response.json();
+        if (data && data.c) {
+          setLatestPrice(data.c);
+        } else {
+          console.error("Invalid data:", data);
+        }
+      } catch (error) {
+        console.error("Error fetching latest price:", error);
+      }
+    };
+
     if (stock) {
-      const socket = new WebSocket(
-        'wss://ws.finnhub.io?token=' + process.env.REACT_APP_FINNHUB_API_KEY
-      );
+      fetchLatestPrice();
 
-      const subscribeMessage = JSON.stringify({
-        type: 'subscribe',
-        symbol: stock.symbol,
-      });
-
-      socket.addEventListener('open', () => {
-        console.log('WebSocket connection opened.');
-        socket.send(subscribeMessage); // Send subscribe message after connection opens
-      });
-
-      socket.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'trade') {
-          setRealTimePrice(data.data[0].p);
-        }
-      });
-
-      socket.addEventListener('close', () => {
-        console.log('WebSocket connection closed.');
-      });
-
-      socket.addEventListener('error', (error) => {
-        console.error('WebSocket error:', error);
-      });
-
-      return () => {
-        // Clean up WebSocket connection
-        if (socket.readyState === WebSocket.OPEN) {
-          const unsubscribeMessage = JSON.stringify({
-            type: 'unsubscribe',
-            symbol: stock.symbol,
-          });
-          socket.send(unsubscribeMessage);
-        }
-        socket.close();
-      };
+      // Update the price every minute (adjust as needed)
+      intervalId = setInterval(fetchLatestPrice, 60000);
     }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [stock]);
 
   return (
@@ -55,8 +43,11 @@ const StockInfo = ({ stock, sentiment, signal, prediction }) => {
       variant="outlined"
       sx={{
         mt: 2,
-        transition: '0.3s',
-        '&:hover': {
+        p: 2,
+        border: '2px solid black',
+        borderRadius: 2,
+        transition: "0.3s",
+        "&:hover": {
           boxShadow: 6,
         },
       }}
@@ -64,35 +55,40 @@ const StockInfo = ({ stock, sentiment, signal, prediction }) => {
       <CardContent>
         {stock ? (
           <>
-            <Typography variant="h5" component="div">
+            <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
               {stock.symbol}
             </Typography>
             <Typography variant="body1">
-              Real-Time Price: ${realTimePrice !== null ? realTimePrice.toFixed(2) : 'Loading...'}
+              <strong>Latest Price:</strong> $
+              {latestPrice !== null ? latestPrice.toFixed(2) : "Loading..."}
             </Typography>
-            <Typography variant="body1">Price: ${stock.price.toFixed(2)}</Typography>
-            <Typography variant="body1">High: ${stock.high.toFixed(2)}</Typography>
-            <Typography variant="body1">Low: ${stock.low.toFixed(2)}</Typography>
+            <Typography variant="body1">
+              <strong>Price:</strong> ${stock.price.toFixed(2)}
+            </Typography>
+            <Typography variant="body1">
+              <strong>High:</strong> ${stock.high.toFixed(2)}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Low:</strong> ${stock.low.toFixed(2)}
+            </Typography>
             {prediction && (
               <Typography variant="body1">
-                Predicted Price for Tomorrow: ${prediction}
+                <strong>Predicted Price for Tomorrow:</strong> ${prediction}
               </Typography>
             )}
             <Typography variant="body1">
-              Sentiment:{' '}
+              <strong>Sentiment:</strong>{" "}
               {sentiment === 1
-                ? 'Positive'
+                ? "Positive"
                 : sentiment === -1
-                ? 'Negative'
-                : 'Neutral'}
+                ? "Negative"
+                : "Neutral"}
             </Typography>
             <Typography variant="body1">
-              Trading Signal:{' '}
-              <strong>
-                {signal}{' '}
-                {signal === 'BUY' && <TrendingUp color="success" />}
-                {signal === 'SELL' && <TrendingDown color="error" />}
-              </strong>
+              <strong>Trading Signal:</strong>{" "}
+              {signal}{" "}
+              {signal === "BUY" && <TrendingUp color="success" />}
+              {signal === "SELL" && <TrendingDown color="error" />}
             </Typography>
           </>
         ) : (

@@ -3,7 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ThemeProvider } from '@mui/material/styles';
-import { Container, Box, Typography, Button, CssBaseline, AppBar, Toolbar, Grid, Alert } from '@mui/material';
+import {
+  Container,
+  Box,
+  Typography,
+  Button,
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Grid,
+  Alert,
+} from '@mui/material';
 import theme from './theme';
 import StockSearch from './components/StockSearch';
 import StockInfo from './components/StockInfo';
@@ -22,51 +32,110 @@ const App = () => {
   const [sentimentHistory, setSentimentHistory] = useState([]);
   const [prediction, setPrediction] = useState(null);
   const [algorithm, setAlgorithm] = useState('linear_regression');
-  const [error, setError] = useState(null); // New state for error messages
+  const [error, setError] = useState(null);
+  const [articles, setArticles] = useState([]);
 
   const fetchStockData = async (symbol) => {
     const apiKey = process.env.REACT_APP_ALPHA_VANTAGE_API_KEY;
 
-    const apiUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
-
     try {
-      const response = await axios.get(apiUrl);
+      // Fetch stock data
+      const response = await axios.get(`https://www.alphavantage.co/query`, {
+        params: {
+          function: 'GLOBAL_QUOTE',
+          symbol,
+          apikey: apiKey,
+        },
+      });
+
+      console.log('API Response:', response.data);
+
       const data = response.data['Global Quote'];
 
       if (data && data['01. symbol']) {
-        const stockData = {
+        setStock({
           symbol: data['01. symbol'],
-          price: parseFloat(data['05. price']),
+          open: parseFloat(data['02. open']),
           high: parseFloat(data['03. high']),
           low: parseFloat(data['04. low']),
-        };
-        setStock(stockData);
-        setError(null); // Clear previous errors
+          price: parseFloat(data['05. price']),
+          volume: parseInt(data['06. volume'], 10),
+          latestTradingDay: data['07. latest trading day'],
+          previousClose: parseFloat(data['08. previous close']),
+          change: parseFloat(data['09. change']),
+          changePercent: data['10. change percent'],
+        });
+        setError(null);
 
-        const sentimentScore = await fetchSentiment(
-          `Latest news and updates about ${symbol}`
-        );
-        setSentiment(sentimentScore);
+        // Fetch news articles using Finnhub API
+        const fetchedArticles = await fetchNewsArticles(symbol);
+        setArticles(fetchedArticles);
 
-        // Update sentiment history
-        setSentimentHistory((prevHistory) => [
-          ...prevHistory,
-          { time: new Date().toLocaleString(), sentiment: sentimentScore },
-        ]);
+        if (fetchedArticles.length > 0) {
+          // Concatenate headlines and summaries of the articles
+          const newsContent = fetchedArticles
+            .map((article) => `${article.headline}. ${article.summary}`)
+            .join(' ');
 
-        generateTradingSignal(sentimentScore, stockData);
+          // Perform sentiment analysis on the news content
+          const sentimentScore = await fetchSentiment(newsContent);
+          setSentiment(sentimentScore);
 
-        // Fetch prediction
+          setSentimentHistory((prevHistory) => [
+            ...prevHistory,
+            { time: new Date().toISOString(), sentiment: sentimentScore },
+          ]);
+
+          generateTradingSignal(sentimentScore, {
+            high: parseFloat(data['03. high']),
+            low: parseFloat(data['04. low']),
+          });
+        } else {
+          console.warn('No news articles found for', symbol);
+          setSentiment(0); // Neutral sentiment if no news
+        }
+
         await fetchPrediction(symbol);
+      } else if (response.data.Note) {
+        setError('API rate limit exceeded. Please wait and try again later.');
       } else {
-        setStock(null);
-        setError('Stock data not found. Please check the symbol.');
+        setError('Invalid stock symbol. Please check and try again.');
       }
     } catch (error) {
       console.error('Error fetching stock data:', error);
-      setStock(null);
-      setError('Failed to fetch stock data. Please try again.');
+      setError('Network error. Please try again.');
     }
+  };
+
+  const fetchNewsArticles = async (symbol) => {
+    try {
+      const response = await axios.get(`https://finnhub.io/api/v1/company-news`, {
+        params: {
+          symbol: symbol,
+          from: getPastDate(7), // Fetch news from the past 7 days
+          to: getCurrentDate(),
+          token: process.env.REACT_APP_FINNHUB_API_KEY,
+        },
+      });
+
+      // Limit to the latest 5 articles
+      return response.data.slice(0, 5);
+    } catch (error) {
+      console.error('Error fetching news articles:', error);
+      return [];
+    }
+  };
+
+  // Helper functions to get dates in YYYY-MM-DD format
+  const getCurrentDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  const getPastDate = (days) => {
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - days);
+    return pastDate.toISOString().split('T')[0];
   };
 
   const fetchPrediction = async (symbol) => {
@@ -75,11 +144,10 @@ const App = () => {
         `http://127.0.0.1:5000/predict?symbol=${symbol}&algorithm=${algorithm}`
       );
       setPrediction(parseFloat(response.data.prediction).toFixed(2));
-      setError(null); // Clear previous errors
+      setError(null);
     } catch (error) {
       console.error('Error fetching prediction:', error);
       if (error.response) {
-        // Backend returned an error response
         setError(error.response.data.error || 'Error fetching prediction.');
       } else {
         setError('Error connecting to prediction service.');
@@ -140,7 +208,7 @@ const App = () => {
       <CssBaseline />
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h4">Stock Analysis</Typography>
+          <Typography variant="h4">Stock Analysis Application</Typography>
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg">
@@ -170,7 +238,7 @@ const App = () => {
               {stock && <HistoricalChart stockSymbol={stock.symbol} />}
             </Grid>
           </Grid>
-          {stock && <NewsFeed stockSymbol={stock.symbol} />}
+          {stock && <NewsFeed stockSymbol={stock.symbol} articles={articles} />}
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
             <Button
               variant="contained"

@@ -3,9 +3,10 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 import { Card, CardContent } from '@mui/material';
+import { cardStyle } from '../styles';
 import {
   Chart as ChartJS,
-  CategoryScale,
+  TimeScale,
   LinearScale,
   PointElement,
   LineElement,
@@ -16,7 +17,7 @@ import {
 import 'chartjs-adapter-date-fns';
 
 ChartJS.register(
-  CategoryScale,
+  TimeScale,
   LinearScale,
   PointElement,
   LineElement,
@@ -26,14 +27,19 @@ ChartJS.register(
 );
 
 const SentimentChart = ({ sentimentHistory }) => {
+  // Prepare the data and options for the chart
   const data = {
-    labels: sentimentHistory.map((entry) => entry.time),
     datasets: [
       {
         label: 'Sentiment Score',
-        data: sentimentHistory.map((entry) => entry.sentiment),
-        borderColor: 'rgba(255,99,132,1)',
-        fill: false,
+        data: sentimentHistory.map((entry) => ({
+          x: entry.time,
+          y: entry.sentiment,
+        })),
+        borderColor: 'rgba(75,192,192,1)',
+        backgroundColor: 'rgba(75,192,192,0.2)',
+        fill: true,
+        tension: 0.4,
       },
     ],
   };
@@ -63,14 +69,14 @@ const SentimentChart = ({ sentimentHistory }) => {
         time: {
           unit: 'minute',
         },
-        display: true,
         title: {
           display: true,
           text: 'Time',
         },
       },
       y: {
-        display: true,
+        suggestedMin: -1,
+        suggestedMax: 1,
         title: {
           display: true,
           text: 'Sentiment Score',
@@ -89,15 +95,7 @@ const SentimentChart = ({ sentimentHistory }) => {
   };
 
   return (
-    <Card
-      variant="outlined"
-      sx={{
-        transition: '0.3s',
-        '&:hover': {
-          boxShadow: 6,
-        },
-      }}
-    >
+    <Card variant="outlined" sx={cardStyle}>
       <CardContent>
         <Line data={data} options={options} />
       </CardContent>
